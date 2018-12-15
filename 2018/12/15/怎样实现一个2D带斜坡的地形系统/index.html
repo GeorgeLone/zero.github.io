@@ -1,0 +1,36 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title>  · 自我折磨症患者</title><meta name="description" content=" - Zero Joe"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/css/prontera.css"><link rel="search" type="application/opensearchdescription+xml" href="https://nobidagu.github.io/atom.xml" title="自我折磨症患者"></head><body><header class="feature-header"><nav class="component-nav"><ul><div class="logo-container"><a href="/"><h2 class="title">自我折磨症患者</h2></a></div><a href="/" target="_self" class="li component-nav-item"><p>主页</p></a><a href="/archives" target="_self" class="li component-nav-item"><p>归档</p></a><a href="/about" target="_self" class="li component-nav-item"><p>关于</p></a><ul class="shortcut-icons"></ul></ul></nav></header><main class="container"><div id="post-container"><div class="post"><article class="post-block"><h1 class="post-title"></h1><div class="post-info">Dec 15, 2018</div><div class="post-content"><p>2D带斜坡地形系统设计</p>
+<p>需求是实现一个2D的平台地形系统,要保证角色,释放物,等等收到地形影响而不会穿透过去.</p>
+<p>角色的位移可以由走,跳,释放技能,被击退,被击飞,等等状态来控制.</p>
+<p>因为自带的物理系统自修正会有帧延迟的问题,所以无法采用.</p>
+<p>因为位移是与状态无关联的,所以需要实现一个通用的物理碰撞计算公式, 所以设计成从角色当前的位置(currentPosition)移动到目标位置(targetPosition)之前, 物理计算一下, 保证角色不会穿透过去, 斜坡演示视频如下.<br><img src="https://storage6.cuntuku.com/2018/12/15/bARQl.gif" alt="gif"></p>
+<p>碰撞盒子有BoxCollider2D, EdgeCollider2D, 为了实现斜坡的功能,和编辑上达到无缝连接,所以采用了EdgeCollider2D,以点的方式相连起来,因为如果用BoxCollider2d,则需要用编辑器,实现功能才能达到顶点的无缝连接,而且还可能出现float类型的精度问题,导致穿透下去,如下图</p>
+<p><img src="https://i.postimg.cc/3NtGtxDy/image.png" alt="img"><br><img src="https://i.postimg.cc/L8c1C7hV/image.png" alt="img"></p>
+<p>unity提供的2D物理检测系统有 Raycast(射线检测), Cast(碰撞检测).</p>
+<p>关于斜坡的功能,我的思路是,斜坡就是地板,必须在角色发生位移的时候,将角色修正到斜坡的交点位置, 所以我采用了射线检查,从当前点发一条射线到目标点,如果有检测到碰撞,则说明穿过了斜坡,则从角色目标点的位置向上发一条射线, 把目标点修正到上方位置.</p>
+<p><img src="https://i.postimg.cc/0jyMK1H9/image.png" alt="img"></p>
+<p>左移的时候同理从目标点向下发一条射线 把目标点修正到下方的位置,以紧贴住地面.</p>
+<p><img src="https://i.postimg.cc/brVGQVKk/image.png" alt="img"></p>
+<p>到这里,斜坡的功能已经实现,视频里面已经有演示过.</p>
+<p>接下来,要考虑墙壁的问题了, 纯墙壁的问题很好解决,只要把角色修正到当前点与墙壁的交点,再稍微往回拉一点点保护距离就可以了.</p>
+<p><img src="https://i.postimg.cc/ryftXzKs/image.png" alt="img"></p>
+<p>但是墙壁与地板的交界处,就有问题了,先来看看这种情况.</p>
+<p><img src="https://i.postimg.cc/CLdnFYqN/image.png" alt="img"></p>
+<p>如图所示,分别演示了两种情况,那么如何将角色修正呢,当然还是发一条射线,然后修正到交点处,再加一点保护距离就可以了,真的是这样么?</p>
+<p>没那么简单,首先来看第一种情况,如果直接修正到交点处,那么角色就会一直卡在交点处,无法掉落下来,因为下一帧后,角色的当前点就变为了交点,然后从交点发射线,便会一直卡交点处了,所以必须把点修正下方的位置才是正确的, 这样可以保证, 角色在朝着墙壁跳跃或下落时, Y轴不会受到影响,如下图</p>
+<p><img src="https://i.postimg.cc/m2qzkq3G/image.png" alt="img"></p>
+<p>照着这个思路,我们先修正墙壁,再将角色修正到目标点,这样就可以保证朝着墙壁移动的时候,角色可以自由的跳跃与下落</p>
+<p><img src="https://i.postimg.cc/SxMXMrVY/image.png" alt="img"></p>
+<p>然后是第二种情况,演算过程和上面的差不多, 但是需要先修正地板,然后再修正墙壁,正确的结果应该如下图所示</p>
+<p><img src="https://i.postimg.cc/W4cd6kfW/image.png" alt="img"></p>
+<p>那么问题来了, 到底是先修正墙壁,还是先修正地板呢?因为连着的线无法获知线段是横线还是竖线,我尝试用这样的方式来进行判断</p>
+<p><img src="https://i.postimg.cc/6QVyHpk9/image.png" alt="img"></p>
+<p>, 由于float类型的精度损耗, 所以把EdgeCollider2D的raduis给一个很小的值,就可以保证不因为精度问题发生穿透现象,谢谢观赏.</p>
+</div></article></div><div id="disqus_thread"></div></div><script>var disqus_shortname = 'nobidagu';
+var disqus_identifier = '2018/12/15/怎样实现一个2D带斜坡的地形系统/';
+var disqus_title = '';
+var disqus_url = 'https://nobidagu.github.io/2018/12/15/怎样实现一个2D带斜坡的地形系统/';
+(function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();</script><script id="dsq-count-scr" src="//nobidagu.disqus.com/count.js" async></script></main><footer class="footer-container"><div class="paginator"><a href="/2018/11/20/句子/" class="next">NEXT</a></div><div class="copyright"><p>© 2017 - 2018 <a href="https://nobidagu.github.io">Zero Joe</a>, powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/AngryPowman/hexo-theme-prontera" target="_blank">hexo-theme-prontera</a>.</p></div></footer><script>(function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;e=o.createElement(i);r=o.getElementsByTagName(i)[0];e.src='//www.google-analytics.com/analytics.js';r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));ga('create',"angrypowman",'auto');ga('send','pageview');</script></body></html>
